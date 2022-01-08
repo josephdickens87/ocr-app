@@ -16,8 +16,9 @@ function App() {
     ante: 0,
     buttonPosition: 0,
   });
-  const [playerData, setPlayerData] = useState([
-  ]);
+
+  const [playerData, setPlayerData] = useState([123, 23423, 2342, 1231, 12313, 2131, 12]);
+  const [gameType, setGameType] = useState("ignitionNineMan");
 
   const stacksList = () => {
     return playerData.map((stack, index) => {
@@ -35,7 +36,7 @@ function App() {
 
   useEffect(() => {
     const initialize = async () => {
-      OcrRectangleConstants.ignitionNinePlayerBetRectangles.forEach(
+      OcrRectangleConstants[gameType]?.forEach(
         async (rect) => {
           const worker = createWorker();
           await worker.load();
@@ -49,16 +50,10 @@ function App() {
         }
       );
       console.log("workers initialized");
-      const video = userVideo.current;
-      video.addEventListener("play", () => {
-        timerId.current = setInterval(startOcr, 1000);
-      });
-
-      console.log("ready");
     };
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gameType]);
 
   const startCapture = async (displayMediaOptions) => {
     let captureStream = null;
@@ -71,6 +66,10 @@ function App() {
       console.error("Error: " + err);
     }
     userVideo.current.srcObject = captureStream;
+
+    userVideo.current.addEventListener("play", () => {
+      timerId.current = setInterval(startOcr, 1000);
+    });
   };
 
   const startOcr = async () => {
@@ -81,15 +80,15 @@ function App() {
 
     canvas.getContext("2d").drawImage(video, 0, 0, 960, 562);
     const results = await Promise.all(
-      OcrRectangleConstants.ignitionNinePlayerBetRectangles.map((rectangle) => {
+      OcrRectangleConstants[gameType].map((rectangle) => {
         return scheduler.addJob("recognize", canvas, { rectangle });
       })
     );
-    const data = results.map((r) => r.data.text);
+    const data = results?.map((r) => r.data.text);
     setPlayerData(data);
   };
 
-  const solvePushOrFold = () => {
+  const reorderPlayerStacks = () => {
     const stacks = playerData.filter((stack) => parseInt(stack));
     if (tableData.buttonPosition + 2 < stacks.length) {
       const beforeBlinds = stacks.slice(0, tableData.buttonPosition + 2);
@@ -106,6 +105,9 @@ function App() {
     }
   };
 
+  const solve = (stacks) => {
+    console.log(stacks)
+  } 
   return (
     <div className="container-fluid p-3">
       <div className="d-flex flex-row w-100 justify-content-center">
@@ -120,22 +122,22 @@ function App() {
           <div className="button-row">
             <div className="input-group h-100">
               <div className="input-group-prepend">
-                <div className="dropdown">
-                  <button
-                    className="btn btn-secondary dropdown-toggle"
-                    type="button"
-                    id="dropdownMenu2"
-                    data-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                  >
-                    Start Screen Capture
+                <button type="button" className="btn btn-primary" onClick={() => {startCapture()}}>
+                Start Screen Capture
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span className="sr-only"></span>
+                </button>
+                <div className="dropdown-menu">
+                  <button className="dropdown-item" type="button" onClick={() => {setGameType('ignitionNineMan')}}>
+                    Ignition 9 Man
                   </button>
-                  <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
-                    <button className="dropdown-item" type="button" onClick={() => startCapture()}>
-                      Ignition 9 Man
-                    </button>
-                  </div>
                 </div>
               </div>
               <input
@@ -186,7 +188,7 @@ function App() {
                 <button
                   type="button"
                   className="btn btn-success"
-                  onClick={() => solvePushOrFold()}
+                  onClick={() => reorderPlayerStacks()}
                 >
                   {" "}
                   Solve

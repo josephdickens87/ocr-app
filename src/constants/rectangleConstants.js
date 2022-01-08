@@ -1,5 +1,5 @@
 const OcrRectangleConstants = {
-  ignitionNinePlayerBetRectangles: [
+  ignitionNineMan: [
     // sparse text seems to work here
     { left: 335, top: 457, width: 76, height: 22 }, // player 0 bet
     { left: 178, top: 446, width: 74, height: 21 }, // player 1 bet
